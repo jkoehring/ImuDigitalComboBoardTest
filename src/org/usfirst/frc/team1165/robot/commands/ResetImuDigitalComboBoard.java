@@ -20,7 +20,8 @@ public class ResetImuDigitalComboBoard extends Command
 	// Called just before this Command runs the first time
 	protected void initialize()
 	{
-		Robot.imuDigitalComboBoard.reset();
+		Robot.imuDigitalComboBoard0.reset();
+		Robot.imuDigitalComboBoard1.reset();
 	}
 
 	// Called repeatedly when this Command is scheduled to run

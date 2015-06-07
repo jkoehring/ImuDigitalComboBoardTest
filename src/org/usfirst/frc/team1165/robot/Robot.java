@@ -1,5 +1,7 @@
 package org.usfirst.frc.team1165.robot;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -18,8 +20,9 @@ import org.usfirst.frc.team1165.robot.subsystems.OnBoardAccelerometer;
 public class Robot extends IterativeRobot
 {
 
-	public static final ImuDigitalComboBoard imuDigitalComboBoard = new ImuDigitalComboBoard();
-	public static final OnBoardAccelerometer onBoardSccelerometer = new OnBoardAccelerometer();
+	public static final ImuDigitalComboBoard imuDigitalComboBoard0 = new ImuDigitalComboBoard(I2C.Port.kOnboard, new DigitalInput(0));
+	public static final ImuDigitalComboBoard imuDigitalComboBoard1 = new ImuDigitalComboBoard(I2C.Port.kMXP, new DigitalInput(1));
+	public static final OnBoardAccelerometer onBoardAccelerometer = new OnBoardAccelerometer();
 	public static OI oi;
 
 	Command autonomousCommand;

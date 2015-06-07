@@ -14,505 +14,675 @@ import edu.wpi.first.wpilibj.util.BoundaryException;
  * 
  * @author Ben Wolsieffer
  */
-public class ITG3200 extends SensorBase {
+public class ITG3200 extends SensorBase
+{
 
-    public static final double DEFAULT_CALIBRATION_TIME = 5.0;
+	public static final double DEFAULT_CALIBRATION_TIME = 5.0;
 
-    /**
-     * The gyro sensitivity in LSB/radian/second. The value retrieved from the
-     * gyro should be divided by this number.
-     */
-    public static final double GYRO_SENSITIVITY = 823.626830313;
+	/**
+	 * The gyro sensitivity in LSB/degrees/second. The value retrieved from the
+	 * gyro should be divided by this number.
+	 */
+	public static final double GYRO_SENSITIVITY = 14.375;
 
-    /**
-     * The temperature sensor sensitivity in LSB/degree celsius. The value
-     * retrieved from the temperature sensor should be divided by this number.
-     */
-    public static final double TEMPERATURE_SENSITIVITY = 280;
-    /**
-     * The ofset of the value retrieved from the temperature sensor.
-     */
-    public static final int TEMPERATURE_OFFSET = -13200;
+	/**
+	 * The temperature sensor sensitivity in LSB/degree celsius. The value
+	 * retrieved from the temperature sensor should be divided by this number.
+	 */
+	public static final double TEMPERATURE_SENSITIVITY = 280;
+	/**
+	 * The ofset of the value retrieved from the temperature sensor.
+	 */
+	public static final int TEMPERATURE_OFFSET = -13200;
 
-    /**
-     * The default address for the gyro. This is what the SparkFun breakout
-     * uses.
-     */
-    public static final int ADDRESS = 0b1101000;
-    /**
-     * The alternative address that is used if AD0 is pulled high.
-     */
-    public static final int ALT_ADDRESS = ADDRESS | 1;
+	/**
+	 * The default address for the gyro. This is what the SparkFun breakout
+	 * uses.
+	 */
+	public static final int ADDRESS = 0b1101000;
+	/**
+	 * The alternative address that is used if AD0 is pulled high.
+	 */
+	public static final int ALT_ADDRESS = ADDRESS | 1;
 
-    /**
-     * The address of the interrupt configuration register.
-     */
-    public static final int INTERRUPT_CONFIG_REGISTER = 23;
-    /**
-     * The address of the digital low pass filter (DLPF) and full scale
-     * register.
-     */
-    public static final int DLPF_FULL_SCALE_REGISTER = 22;
-    /**
-     * The address of the sample rate divider register.
-     */
-    public static final int SAMPLE_RATE_REGISTER = 21;
-    /**
-     * The address of the interrupt status register.
-     */
-    public static final int INTERRUPT_STATUS_REGISTER = 26;
-    /**
-     * The address of the temperature sensor register.
-     */
-    public static final int TEMPERATURE_REGISTER = 27;
-    /**
-     * The address of the gyro reading register.
-     */
-    public static final int GYRO_REGISTER = 29;
-    /**
-     * The address of the power management register.
-     */
-    public static final int POWER_MANAGEMENT_REGISTER = 62;
+	/**
+	 * The address of the interrupt configuration register.
+	 */
+	public static final int INTERRUPT_CONFIG_REGISTER = 23;
+	/**
+	 * The address of the digital low pass filter (DLPF) and full scale
+	 * register.
+	 */
+	public static final int DLPF_FULL_SCALE_REGISTER = 22;
+	/**
+	 * The address of the sample rate divider register.
+	 */
+	public static final int SAMPLE_RATE_REGISTER = 21;
+	/**
+	 * The address of the interrupt status register.
+	 */
+	public static final int INTERRUPT_STATUS_REGISTER = 26;
+	/**
+	 * The address of the temperature sensor register.
+	 */
+	public static final int TEMPERATURE_REGISTER = 27;
+	/**
+	 * The address of the gyro reading register.
+	 */
+	public static final int GYRO_REGISTER = 29;
+	/**
+	 * The address of the power management register.
+	 */
+	public static final int POWER_MANAGEMENT_REGISTER = 62;
 
-    /**
-     * Represents the different types of digital filters that the gyro can use.
-     */
-    public enum Filter {
-        /**
-         * 256Hz digital low pass filter. This sets the internal sample rate to
-         * 8KHz.
-         */
-        DLPF_256Hz(0),
-        /**
-         * 188Hz digital low pass filter. This sets the internal sample rate to
-         * 1KHz.
-         */
-        DLPF_188Hz(1),
-        /**
-         * 98Hz digital low pass filter. This sets the internal sample rate to
-         * 1KHz.
-         */
-        DLPF_98Hz(2),
-        /**
-         * 42Hz digital low pass filter. This sets the internal sample rate to
-         * 1KHz.
-         */
-        DLPF_42Hz(3),
-        /**
-         * 20Hz digital low pass filter. This sets the internal sample rate to
-         * 1KHz.
-         */
-        DLPF_20Hz(4),
-        /**
-         * 10Hz digital low pass filter. This sets the internal sample rate to
-         * 1KHz.
-         */
-        DLPF_10Hz(5),
-        /**
-         * 5Hz digital low pass filter. This sets the internal sample rate to
-         * 1KHz.
-         */
-        DLPF_5Hz(6);
+	/**
+	 * Represents the different types of digital filters that the gyro can use.
+	 */
+	public enum Filter
+	{
+		/**
+		 * 256Hz digital low pass filter. This sets the internal sample rate to
+		 * 8KHz.
+		 */
+		DLPF_256Hz(0),
+		/**
+		 * 188Hz digital low pass filter. This sets the internal sample rate to
+		 * 1KHz.
+		 */
+		DLPF_188Hz(1),
+		/**
+		 * 98Hz digital low pass filter. This sets the internal sample rate to
+		 * 1KHz.
+		 */
+		DLPF_98Hz(2),
+		/**
+		 * 42Hz digital low pass filter. This sets the internal sample rate to
+		 * 1KHz.
+		 */
+		DLPF_42Hz(3),
+		/**
+		 * 20Hz digital low pass filter. This sets the internal sample rate to
+		 * 1KHz.
+		 */
+		DLPF_20Hz(4),
+		/**
+		 * 10Hz digital low pass filter. This sets the internal sample rate to
+		 * 1KHz.
+		 */
+		DLPF_10Hz(5),
+		/**
+		 * 5Hz digital low pass filter. This sets the internal sample rate to
+		 * 1KHz.
+		 */
+		DLPF_5Hz(6);
 
-        private final int value;
+		private final int value;
 
-        private Filter(int value) {
-            this.value = value;
-        }
-    }
+		private Filter(int value)
+		{
+			this.value = value;
+		}
+	}
 
-    /**
-     * The clock source to use for the gyro.
-     */
-    public enum ClockSource {
-        /**
-         * Internal clock source. This is used at startup and is less accurate.
-         */
-        INTERNAL(0),
-        /**
-         * X axis gyro clock source.
-         */
-        X_AXIS(1),
-        /**
-         * Y axis gyro clock source.
-         */
-        Y_AXIS(2),
-        /**
-         * Z axis gyro clock source.
-         */
-        Z_AXIS(3),
-        /**
-         * External 32.768KHz clock source. This cannot be used on the SparkFun
-         * breakout.
-         */
-        EXT_32_768KHZ(4),
-        /**
-         * External 19.2MHz clock source. This cannot be used on the SparkFun
-         * breakout.
-         */
-        EXT_19_2MHZ(5);
+	/**
+	 * The clock source to use for the gyro.
+	 */
+	public enum ClockSource
+	{
+		/**
+		 * Internal clock source. This is used at startup and is less accurate.
+		 */
+		INTERNAL(0),
+		/**
+		 * X axis gyro clock source.
+		 */
+		X_AXIS(1),
+		/**
+		 * Y axis gyro clock source.
+		 */
+		Y_AXIS(2),
+		/**
+		 * Z axis gyro clock source.
+		 */
+		Z_AXIS(3),
+		/**
+		 * External 32.768KHz clock source. This cannot be used on the SparkFun
+		 * breakout.
+		 */
+		EXT_32_768KHZ(4),
+		/**
+		 * External 19.2MHz clock source. This cannot be used on the SparkFun
+		 * breakout.
+		 */
+		EXT_19_2MHZ(5);
 
-        private final int value;
+		private final int value;
 
-        private ClockSource(int value) {
-            this.value = value;
-        }
-    }
+		private ClockSource(int value)
+		{
+			this.value = value;
+		}
+	}
 
-    /**
-     * The number samples that were taken during calibration.
-     */
-    private int numCalibrationSamples = 0;
+	/**
+	 * The number samples that were taken during calibration.
+	 */
+	private int numCalibrationSamples = 0;
 
-    /**
-     * Represents an axis of the gyro.
-     */
-    public class GyroAxis {
+	/**
+	 * Represents an axis of the gyro.
+	 */
+	public class GyroAxis
+	{
 
-        /**
-         * The rate of the gyro axis.
-         */
-        private double rate = 0;
-        /**
-         * The angle of the gyro axis.
-         */
-        private double angle = 0;
-        /**
-         * The calibrated center of the gyro axis.
-         */
-        private double center = 0;
-        /**
-         * Used internally to store the sum of the calibration samples.
-         */
-        private int calibrationSum = 0;
+		/**
+		 * The rate of the gyro axis.
+		 */
+		private double rate = 0;
+		/**
+		 * The angle of the gyro axis.
+		 */
+		private double angle = 0;
+		/**
+		 * The calibrated center of the gyro axis.
+		 */
+		private double center = 0;
+		/**
+		 * Used internally to store the sum of the calibration samples.
+		 */
+		private int calibrationSum = 0;
 
-        /**
-         * Returns the current angle of the axis.
-         */
-        public double getAngle() {
-            synchronized (ITG3200.this) {
-                return angle;
-            }
-        }
+		/**
+		 * Returns the current angle of the axis.
+		 */
+		public double getAngle()
+		{
+			synchronized (ITG3200.this)
+			{
+				return angle;
+			}
+		}
 
-        /**
-         * Returns the current rate of rotation of the axis.
-         */
-        public double getRate() {
-            synchronized (ITG3200.this) {
-                return rate;
-            }
-        }
+		/**
+		 * Returns the current rate of rotation of the axis.
+		 */
+		public double getRate()
+		{
+			synchronized (ITG3200.this)
+			{
+				return rate;
+			}
+		}
 
-        /**
-         * Resets the axis.
-         */
-        public void reset() {
-            synchronized (ITG3200.this) {
-                angle = 0;
-            }
-        }
-    }
+		/**
+		 * Resets the axis.
+		 */
+		public void reset()
+		{
+			synchronized (ITG3200.this)
+			{
+				angle = 0;
+			}
+		}
+	}
 
-    /**
-     * The I2C object used to communicate.
-     */
-    private final I2C i2c;
+	/**
+	 * The I2C object used to communicate.
+	 */
+	private final I2C i2c;
 
-    /**
-     * The I2C address of the gyro.
-     */
-    private final int address;
-    /**
-     * The filter the gyro should use.
-     */
-    private Filter filter = Filter.DLPF_256Hz;
-    /**
-     * The internal sample rate of the gyro in hertz.
-     */
-    private int internalSampleRate;
-    /**
-     * The actual sample rate after the divider is applied.
-     */
-    private double sampleRate;
-    /**
-     * The sample rate divider. The internal sample rate is divided by this
-     * value to get the real sample rate.
-     */
-    private int sampleRateDivider = 250;
-    /**
-     * The clock source for the gyro.
-     */
-    private ClockSource clockSource = ClockSource.X_AXIS;
+	/**
+	 * The I2C address of the gyro.
+	 */
+	private final int address;
+	/**
+	 * The filter the gyro should use.
+	 */
+	private Filter filter = Filter.DLPF_256Hz;
+	/**
+	 * The internal sample rate of the gyro in hertz.
+	 */
+	private int internalSampleRate;
+	/**
+	 * The actual sample rate after the divider is applied.
+	 */
+	private double sampleRate;
+	/**
+	 * The sample rate divider. The internal sample rate is divided by this
+	 * value to get the real sample rate.
+	 */
+	private int sampleRateDivider = 250;
+	/**
+	 * The clock source for the gyro.
+	 */
+	private ClockSource clockSource = ClockSource.X_AXIS;
 
-    /**
-     * Flag that is set true during calibration.
-     */
-    private boolean calibrate = false;
+	/**
+	 * Flag that is set true during calibration.
+	 */
+	private boolean calibrate = false;
 
-    /**
-     * The x axis of the gyro.
-     */
-    private GyroAxis xGyro = new GyroAxis();
-    /**
-     * The y axis of the gyro.
-     */
-    private GyroAxis yGyro = new GyroAxis();
-    /**
-     * the x axis of the gyro.
-     */
-    private GyroAxis zGyro = new GyroAxis();
+	/**
+	 * The x axis of the gyro.
+	 */
+	private GyroAxis xGyro = new GyroAxis();
+	/**
+	 * The y axis of the gyro.
+	 */
+	private GyroAxis yGyro = new GyroAxis();
+	/**
+	 * The z axis of the gyro.
+	 */
+	private GyroAxis zGyro = new GyroAxis();
+	/**
+	 * The die temperature of the device.
+	 */
+	private double temperature;
+	/**
+	 * The following used to dynamically calculate the sample rate.
+	 */
+	private long dynamicSampleRateStartTime;
+	private long dynamicSampleRateSampleCount;
+	private double dynamicSampleRate;
+	private Object dynamicSampleRateLock = new Object();
+	/**
+	 * The following used to keep count of errors reading from and writing to device.
+	 */
+	private int readErrorCount;
+	private int writeErrorCount;
 
-    /**
-     * Creates a new ITG-3200 on the specified I2C port and digital interrupt
-     * port.
-     * 
-     * @param port the I2C port the gyro is attached to
-     * @param interrupt the interrupt port to use
-     */
-    public ITG3200(Port port, DigitalSource interrupt) {
-        this(port, interrupt, false);
-    }
+	/**
+	 * Creates a new ITG-3200 on the specified I2C port and digital interrupt
+	 * port.
+	 * 
+	 * @param port
+	 *            the I2C port the gyro is attached to
+	 * @param interrupt
+	 *            the interrupt port to use
+	 */
+	public ITG3200(Port port, DigitalSource interrupt)
+	{
+		this(port, interrupt, false);
+	}
 
-    /**
-     * Creates a new ITG-3200 on the specified I2C port and digital interrupt
-     * port, possibly using the alternate address.
-     * 
-     * @param port the I2C port the gyro is attached to
-     * @param interrupt the interrupt port to use
-     * @param altAddress whether to use the alternate address
-     */
-    public ITG3200(Port port, DigitalSource interrupt, boolean altAddress) {
-        // Setup the address
-        if (altAddress) {
-            address = ALT_ADDRESS;
-        } else {
-            address = ADDRESS;
-        }
+	/**
+	 * Creates a new ITG-3200 on the specified I2C port and digital interrupt
+	 * port, possibly using the alternate address.
+	 * 
+	 * @param port
+	 *            the I2C port the gyro is attached to
+	 * @param interrupt
+	 *            the interrupt port to use
+	 * @param altAddress
+	 *            whether to use the alternate address
+	 */
+	public ITG3200(Port port, DigitalSource interrupt, boolean altAddress)
+	{
+		// Setup the address
+		if (altAddress)
+		{
+			address = ALT_ADDRESS;
+		}
+		else
+		{
+			address = ADDRESS;
+		}
 
-        i2c = new I2C(port, address);
+		i2c = new I2C(port, address);
 
-        // Register an interrupt handler
-        interrupt.requestInterrupts(new InterruptHandlerFunction<Object>() {
+		// Register an interrupt handler
+		interrupt.requestInterrupts(new InterruptHandlerFunction<Object>()
+		{
 
-            @Override
-            public void interruptFired(int interruptAssertedMask, Object param) {
-                if (calibrate) {
-                    // If in calibration mode, run the calibration handler
-                    readCalibrationAxes();
-                } else {
-                    // Otherwise, read the axes normally
-                    readAxes();
-                }
-            }
-        });
-        // Listen for a falling edge
-        interrupt.setUpSourceEdge(false, true);
+			@Override
+			public void interruptFired(int interruptAssertedMask, Object param)
+			{
+				if (readTemperature())  { }
+				{
+					if (calibrate)
+					{
+						// If in calibration mode, run the calibration handler
+						readCalibrationData();
+					}
+					else
+					{
+						// Otherwise, read the axes normally
+						readProductionData();
+					}
+				}
+								
+				synchronized(dynamicSampleRateLock)
+				{
+					dynamicSampleRateSampleCount++;
+					dynamicSampleRate = dynamicSampleRateSampleCount * 1e9 / (System.nanoTime() - dynamicSampleRateStartTime);
+				}
 
-        // Write the power management register (ie. clock source)
-        writePowerManagement();
-        // Write the filter and full scale register
-        writeDLPFFullScale();
-        // Write sample rate divider
-        writeSampleRateDivider();
+				clearInterrupts();
+			}
+		});
+		// Listen for a falling edge
+		interrupt.setUpSourceEdge(false, true);
 
-        // Enable digital interrupt pin
-        interrupt.enableInterrupts();
-        // Write interrupt config to gyro
-        writeInterruptConfig();
-        // Clear any existing interrupts in case the robot code was restarted
-        // but the gyro was not
-        clearInterrupts();
+		// Write the power management register (ie. clock source)
+		writePowerManagement();
+		// Write the filter and full scale register
+		writeDLPFFullScale();
+		// Write sample rate divider
+		writeSampleRateDivider();
+		
+		resetDynamicSampleRate();
 
-        // Calibrate the gyro
-        calibrate(DEFAULT_CALIBRATION_TIME);
-    }
+		// Enable digital interrupt pin
+		interrupt.enableInterrupts();
+		// Write interrupt config to gyro
+		writeInterruptConfig();
+		// Clear any existing interrupts in case the robot code was restarted
+		// but the gyro was not
+		clearInterrupts();
 
-    /**
-     * Read the axes and add the values to the calibration sum.
-     */
-    private void readCalibrationAxes() {
-        byte[] axes = new byte[6];
-        i2c.read(GYRO_REGISTER, 6, axes);
+		// Calibrate the gyro
+		calibrate(DEFAULT_CALIBRATION_TIME);
+	}
 
-        numCalibrationSamples++;
-        xGyro.calibrationSum += (axes[0] << 8) | axes[1];
-        yGyro.calibrationSum += (axes[2] << 8) | axes[3];
-        zGyro.calibrationSum += (axes[4] << 8) | axes[5];
-    }
+	/**
+	 * Read the axes and add the values to the calibration sum.
+	 */
+	private void readCalibrationData()
+	{
+		byte[] data = readAxisData();
 
-    /**
-     * Read the axes and compute the rate and angle.
-     */
-    private void readAxes() {
-        byte[] axes = new byte[6];
-        i2c.read(GYRO_REGISTER, 6, axes);
+		numCalibrationSamples++;
+		xGyro.calibrationSum += (data[0] << 8) | data[1];
+		yGyro.calibrationSum += (data[2] << 8) | data[3];
+		zGyro.calibrationSum += (data[4] << 8) | data[5];
+	}
 
-        synchronized (this) {
-            xGyro.rate = (((axes[0] << 8) | axes[1]) - xGyro.center) / GYRO_SENSITIVITY;
-            yGyro.rate = (((axes[2] << 8) | axes[3]) - yGyro.center) / GYRO_SENSITIVITY;
-            zGyro.rate = (((axes[4] << 8) | axes[5]) - zGyro.center) / GYRO_SENSITIVITY;
+	/**
+	 * Read the axes and compute the rate and angle.
+	 */
+	private void readProductionData()
+	{
+		byte[] data = readAxisData();
 
-            xGyro.angle += xGyro.rate / sampleRate;
-            yGyro.angle += yGyro.rate / sampleRate;
-            zGyro.angle += zGyro.rate / sampleRate;
-        }
-    }
+		synchronized (this)
+		{
+			xGyro.rate = (((data[0] << 8) | data[1]) - xGyro.center) / GYRO_SENSITIVITY;
+			yGyro.rate = (((data[2] << 8) | data[3]) - yGyro.center) / GYRO_SENSITIVITY;
+			zGyro.rate = (((data[4] << 8) | data[5]) - zGyro.center) / GYRO_SENSITIVITY;
 
-    /**
-     * Get the temperature of the gyro in degrees celcius.
-     * 
-     * @return the temperature
-     */
-    public double getTemperature() {
-        byte[] temp = new byte[2];
-        i2c.read(TEMPERATURE_REGISTER, 2, temp);
+			xGyro.angle += xGyro.rate / sampleRate;
+			yGyro.angle += yGyro.rate / sampleRate;
+			zGyro.angle += zGyro.rate / sampleRate;
+		}
+	}
 
-        return (((temp[0] << 8) | temp[1]) + TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY;
-    }
+	/**
+	 * Reads all axis data from the gyro.
+	 * 
+	 * @return An array containing 6 bytes of data.
+	 */
+	private byte[] readAxisData()
+	{
+		byte[] data = new byte[6];
+		i2cRead(GYRO_REGISTER, data.length, data);
+		return data;
+	}
+	
+	/**
+	 * Reads all temperature data from the gyro.
+	 * 
+	 * @return An array containing 2 bytes of data.
+	 */
+	private byte[] readTempData()
+	{
+		byte[] data = new byte[2];
+		i2cRead(TEMPERATURE_REGISTER, data.length, data);
+		return data;
+	}
 
-    /**
-     * Write the interrupt configuration flags.
-     */
-    private void writeInterruptConfig() {
-        // 7: Logic level for INT output pin - 1=active low, 0=active high
-        // 6: Drive type for INT output pin - 1=open drain, 0=push-pull
-        // 5: Latch mode - 1=latch until interrupt is cleared, 0=50us pulse
-        // 4: Latch clear method - 1=any register read, 0=status register read
-        // only
-        // 3: 0
-        // 2: Enable interrupt when device is ready (PLL ready after changing
-        // clock source)
-        // 1: 0
-        // 0: Enable interrupt when data is available
+	private boolean readTemperature()
+	{
+		byte[] data = readTempData();
 
-        i2c.write(INTERRUPT_CONFIG_REGISTER, 0b11110001);
-    }
+		double temp = (((data[0] << 8) | data[1]) - TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY;
+//		if (temp > 0)
+		{
+			temperature = temp;
+			return true;
+		}
+		
+//		return false;
+	}
 
-    /**
-     * Clear the interrupt status register.
-     */
-    private void clearInterrupts() {
-        // The gyro is configured to clear interrupts on any register read.
-        byte[] buf = new byte[1];
-        i2c.read(INTERRUPT_STATUS_REGISTER, 1, buf);
-    }
+	public double getSampleRate()
+	{
+		return sampleRate;
+	}
 
-    /**
-     * Sets the filter type to use. This also may change the sample rate.
-     * 
-     * @see Filter
-     * @param filter the filter type
-     */
-    public void setFilter(Filter filter) {
-        this.filter = filter;
-        writeDLPFFullScale();
-        writeSampleRateDivider();
-    }
+	/**
+	 * Get the temperature of the gyro in degrees celcius.
+	 * 
+	 * @return the temperature
+	 */
+	public double getTemperature()
+	{
+		return temperature;
+	}
 
-    /**
-     * Write the digital filter register and the full scale flag.
-     */
-    private void writeDLPFFullScale() {
-        switch (filter) {
-        case DLPF_256Hz:
-            internalSampleRate = 8000;
-        break;
-        default:
-            internalSampleRate = 1000;
-        break;
-        }
+	/**
+	 * Write the interrupt configuration flags.
+	 */
+	private void writeInterruptConfig()
+	{
+		// 7: Logic level for INT output pin - 1=active low, 0=active high
+		// 6: Drive type for INT output pin - 1=open drain, 0=push-pull
+		// 5: Latch mode - 1=latch until interrupt is cleared, 0=50us pulse
+		// 4: Latch clear method - 1=any register read, 0=status register read
+		// only
+		// 3: 0
+		// 2: Enable interrupt when device is ready (PLL ready after changing
+		// clock source)
+		// 1: 0
+		// 0: Enable interrupt when data is available
 
-        int data = (3 << 3) | filter.value;
-        i2c.write(DLPF_FULL_SCALE_REGISTER, data);
-    }
+		i2cWrite(INTERRUPT_CONFIG_REGISTER, 0b11100001);
+	}
 
-    /**
-     * set the sample rate divider. This divides the internal sample rate by the
-     * specified value.
-     * 
-     * @param divider the sample rate divider
-     */
-    public void setSampleRateDivider(int divider) {
-        BoundaryException.assertWithinBounds(divider, 1, 256);
-        sampleRateDivider = divider;
-        writeSampleRateDivider();
-    }
+	/**
+	 * Clear the interrupt status register.
+	 */
+	private void clearInterrupts()
+	{
+		// The gyro is configured to clear interrupts on any register read.
+		byte[] buf = new byte[1];
+		i2cRead(INTERRUPT_STATUS_REGISTER, 1, buf);
+	}
 
-    /**
-     * Write the sample rate divider register.
-     */
-    private void writeSampleRateDivider() {
-        sampleRate = ((double) internalSampleRate) / sampleRateDivider;
-        i2c.write(SAMPLE_RATE_REGISTER, sampleRateDivider - 1);
-    }
+	/**
+	 * Sets the filter type to use. This also may change the sample rate.
+	 * 
+	 * @see Filter
+	 * @param filter
+	 *            the filter type
+	 */
+	public void setFilter(Filter filter)
+	{
+		this.filter = filter;
+		writeDLPFFullScale();
+		writeSampleRateDivider();
+	}
 
-    /**
-     * Set the clock source to use for the gyro.
-     * 
-     * @param source the clock source
-     */
-    public void setClockSource(ClockSource source) {
-        clockSource = source;
-        writePowerManagement();
-    }
+	/**
+	 * Write the digital filter register and the full scale flag.
+	 */
+	private void writeDLPFFullScale()
+	{
+		switch (filter)
+		{
+		case DLPF_256Hz:
+			internalSampleRate = 8000;
+			break;
+		default:
+			internalSampleRate = 1000;
+			break;
+		}
 
-    /**
-     * Calibrate the gyro for the specified amount of time. This should only be
-     * called when the gyro is not moving. It is also done automatically upon
-     * construction.
-     * 
-     * @param time the calibration time
-     */
-    public void calibrate(double time) {
-        synchronized (this) {
-            numCalibrationSamples = 0;
-            xGyro.calibrationSum = 0;
-            yGyro.calibrationSum = 0;
-            zGyro.calibrationSum = 0;
+		int data = (3 << 3) | filter.value;
+		i2cWrite(DLPF_FULL_SCALE_REGISTER, data);
+	}
 
-            calibrate = true;
-            Timer.delay(time);
-            calibrate = false;
+	/**
+	 * set the sample rate divider. This divides the internal sample rate by the
+	 * specified value.
+	 * 
+	 * @param divider
+	 *            the sample rate divider
+	 */
+	public void setSampleRateDivider(int divider)
+	{
+		BoundaryException.assertWithinBounds(divider, 1, 256);
+		sampleRateDivider = divider;
+		writeSampleRateDivider();
+	}
 
-            xGyro.center = ((double) xGyro.calibrationSum) / numCalibrationSamples;
-            yGyro.center = ((double) yGyro.calibrationSum) / numCalibrationSamples;
-            zGyro.center = ((double) zGyro.calibrationSum) / numCalibrationSamples;
-        }
-    }
+	/**
+	 * Write the sample rate divider register.
+	 */
+	private void writeSampleRateDivider()
+	{
+		sampleRate = ((double) internalSampleRate) / sampleRateDivider;
+		i2cWrite(SAMPLE_RATE_REGISTER, sampleRateDivider - 1);
+	}
 
-    /**
-     * Write the power management (clock source) register.
-     */
-    private void writePowerManagement() {
-        int data = clockSource.value;
-        i2c.write(POWER_MANAGEMENT_REGISTER, data);
-    }
+	/**
+	 * Set the clock source to use for the gyro.
+	 * 
+	 * @param source
+	 *            the clock source
+	 */
+	public void setClockSource(ClockSource source)
+	{
+		clockSource = source;
+		writePowerManagement();
+	}
 
-    /**
-     * Gets a {@link Gyro} object representing the x axis of the gyro.
-     * 
-     * @return the x axis
-     */
-    public GyroAxis getXGyro() {
-        return xGyro;
-    }
+	/**
+	 * Calibrate the gyro for the specified amount of time. This should only be
+	 * called when the gyro is not moving. It is also done automatically upon
+	 * construction.
+	 * 
+	 * @param time
+	 *            the calibration time
+	 */
+	public void calibrate(double time)
+	{
+		synchronized (this)
+		{
+			numCalibrationSamples = 0;
+			xGyro.calibrationSum = 0;
+			yGyro.calibrationSum = 0;
+			zGyro.calibrationSum = 0;
 
-    /**
-     * Gets a {@link Gyro} object representing the y axis of the gyro.
-     * 
-     * @return the y axis
-     */
-    public GyroAxis getYGyro() {
-        return yGyro;
-    }
+			calibrate = true;
+			Timer.delay(time);
+			calibrate = false;
 
-    /**
-     * Gets a {@link Gyro} object representing the z axis of the gyro.
-     * 
-     * @return the z axis
-     */
-    public GyroAxis getZGyro() {
-        return zGyro;
-    }
+			xGyro.center = ((double) xGyro.calibrationSum) / numCalibrationSamples;
+			yGyro.center = ((double) yGyro.calibrationSum) / numCalibrationSamples;
+			zGyro.center = ((double) zGyro.calibrationSum) / numCalibrationSamples;
+			
+			xGyro.reset();
+			yGyro.reset();
+			zGyro.reset();
+			
+			readErrorCount = 0;
+			writeErrorCount = 0;
+		}
+	}
+	
+	public void resetDynamicSampleRate()
+	{
+		synchronized(dynamicSampleRateLock)
+		{
+			dynamicSampleRateStartTime = System.nanoTime();
+			dynamicSampleRateSampleCount = 0;
+			dynamicSampleRate = 0;
+		}
+	}
+	
+	public double getDynamicSampleRate()
+	{
+		return dynamicSampleRate;
+	}
+	
+	public int getReadErrorCount()
+	{
+		return readErrorCount;
+	}
+	
+	public int getWriteErrorCount()
+	{
+		return writeErrorCount;
+	}
+	
+	private boolean i2cRead(int register, int dataLength, byte[] data)
+	{
+		if (!i2c.read(register,  dataLength, data))
+		{
+			readErrorCount++;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private boolean i2cWrite(int register, int value)
+	{
+		if (!i2c.write(register, value))
+		{
+			writeErrorCount++;
+			return false;
+		}
+		
+		return true;
+	}
+
+	/**
+	 * Write the power management (clock source) register.
+	 */
+	private void writePowerManagement()
+	{
+		int data = clockSource.value;
+		i2cWrite(POWER_MANAGEMENT_REGISTER, data);
+	}
+
+	/**
+	 * Gets a {@link Gyro} object representing the x axis of the gyro.
+	 * 
+	 * @return the x axis
+	 */
+	public GyroAxis getXGyro()
+	{
+		return xGyro;
+	}
+
+	/**
+	 * Gets a {@link Gyro} object representing the y axis of the gyro.
+	 * 
+	 * @return the y axis
+	 */
+	public GyroAxis getYGyro()
+	{
+		return yGyro;
+	}
+
+	/**
+	 * Gets a {@link Gyro} object representing the z axis of the gyro.
+	 * 
+	 * @return the z axis
+	 */
+	public GyroAxis getZGyro()
+	{
+		return zGyro;
+	}
 }

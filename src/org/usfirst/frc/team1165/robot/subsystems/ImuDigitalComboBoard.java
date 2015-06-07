@@ -6,6 +6,7 @@ import org.usfirst.frc.team1165.robot.sensors.ADXL345_I2C;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.ITG3200;
+import edu.wpi.first.wpilibj.ITG3200.GyroAxis;
 import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -19,10 +20,29 @@ public class ImuDigitalComboBoard extends ReportableSubsystem
 	
 	private final double DEGREES_PER_RADIAN = 180.0 / Math.PI;
 	
-	public ImuDigitalComboBoard()
+	private double tempMin;
+	private double tempMax;
+	
+	private GyroAxis xGyro;
+	private GyroAxis yGyro;
+	private GyroAxis zGyro;
+	
+	private I2C.Port port;
+	
+	public ImuDigitalComboBoard(I2C.Port port, DigitalInput interrupt)
 	{
-		accelerometer = new ADXL345_I2C(I2C.Port.kOnboard, Accelerometer.Range.k16G, true);
-		gyro = new ITG3200(I2C.Port.kOnboard, new DigitalInput(0));
+		this.port = port;
+		
+		accelerometer = new ADXL345_I2C(port, Accelerometer.Range.k16G, true);
+		gyro = new ITG3200(port, interrupt, false);
+		
+		xGyro = gyro.getXGyro();
+		yGyro = gyro.getYGyro();
+		zGyro = gyro.getZGyro();
+		
+		tempMin = Double.MAX_VALUE;
+		tempMax = Double.MIN_VALUE;
+		
 	}
 
 	// Put methods for controlling this subsystem
@@ -35,26 +55,38 @@ public class ImuDigitalComboBoard extends ReportableSubsystem
 	
 	public void report()
 	{
-		SmartDashboard.putNumber("IMU Accel X", accelerometer.getX());
-		SmartDashboard.putNumber("IMU Accel Y", accelerometer.getY());
-		SmartDashboard.putNumber("IMU Accel Z", accelerometer.getZ());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Accel X", accelerometer.getX());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Accel Y", accelerometer.getY());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Accel Z", accelerometer.getZ());
 		
-		SmartDashboard.putNumber("IMU Rate X", gyro.getXGyro().getRate() * DEGREES_PER_RADIAN);
-		SmartDashboard.putNumber("IMU Rate Y", gyro.getYGyro().getRate() * DEGREES_PER_RADIAN);
-		SmartDashboard.putNumber("IMU Rate Z", gyro.getZGyro().getRate() * DEGREES_PER_RADIAN);
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Rate X", xGyro.getRate());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Rate Y", yGyro.getRate());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Rate Z", zGyro.getRate());
 		
-		SmartDashboard.putNumber("IMU Angle X", gyro.getXGyro().getAngle() * DEGREES_PER_RADIAN);
-		SmartDashboard.putNumber("IMU Angle Y", gyro.getYGyro().getAngle() * DEGREES_PER_RADIAN);
-		SmartDashboard.putNumber("IMU Angle Z", gyro.getZGyro().getAngle() * DEGREES_PER_RADIAN);
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Angle X", xGyro.getAngle());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Angle Y", yGyro.getAngle());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Angle Z", zGyro.getAngle());
 		
-		SmartDashboard.putNumber("IMU Temp", gyro.getTemperature());
+		double temp = gyro.getTemperature();
+		tempMin = Math.min(temp, tempMin);
+		tempMax = Math.max(temp, tempMax);
+		
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Gyro Temp", temp);
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Gyro Temp Min", tempMin);
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Gyro Temp Max", tempMax);
+		
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Gyro Sample Rate", gyro.getSampleRate());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Gyro Cur Sample Rate", gyro.getDynamicSampleRate());
+		
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Read Error Count", gyro.getReadErrorCount());
+		SmartDashboard.putNumber("IMU " + port.getValue() + " Write Error Count", gyro.getWriteErrorCount());
 	}
 	
 	public void reset()
 	{
+		gyro.resetDynamicSampleRate();
 		gyro.calibrate(5.0);
-		gyro.getXGyro().reset();
-		gyro.getYGyro().reset();
-		gyro.getZGyro().reset();
+		tempMin = Double.MAX_VALUE;
+		tempMax = Double.MIN_VALUE;
 	}
 }
