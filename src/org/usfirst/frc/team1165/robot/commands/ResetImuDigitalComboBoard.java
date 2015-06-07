@@ -1,6 +1,7 @@
 package org.usfirst.frc.team1165.robot.commands;
 
 import org.usfirst.frc.team1165.robot.Robot;
+import org.usfirst.frc.team1165.robot.subsystems.ImuDigitalComboBoard;
 
 import edu.wpi.first.wpilibj.command.Command;
 
@@ -10,18 +11,18 @@ import edu.wpi.first.wpilibj.command.Command;
  */
 public class ResetImuDigitalComboBoard extends Command
 {
-
-	public ResetImuDigitalComboBoard()
+	private ImuDigitalComboBoard board;
+	public ResetImuDigitalComboBoard(ImuDigitalComboBoard board)
 	{
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
+		this.board = board;
 	}
 
 	// Called just before this Command runs the first time
 	protected void initialize()
 	{
-		Robot.imuDigitalComboBoard0.reset();
-		Robot.imuDigitalComboBoard1.reset();
+		board.reset();
 	}
 
 	// Called repeatedly when this Command is scheduled to run

@@ -1,8 +1,5 @@
 package org.usfirst.frc.team1165.robot;
 
-import org.usfirst.frc.team1165.robot.commands.ResetImuDigitalComboBoard;
-
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * This class is the glue that binds the controls on the physical operator
@@ -40,6 +37,5 @@ public class OI
 	
 	public OI()
 	{
-		SmartDashboard.putData("Reset IMU", new ResetImuDigitalComboBoard());
 	}
 }

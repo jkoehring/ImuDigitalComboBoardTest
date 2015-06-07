@@ -21,7 +21,7 @@ public class Robot extends IterativeRobot
 {
 
 	public static final ImuDigitalComboBoard imuDigitalComboBoard0 = new ImuDigitalComboBoard(I2C.Port.kOnboard, new DigitalInput(0));
-	public static final ImuDigitalComboBoard imuDigitalComboBoard1 = new ImuDigitalComboBoard(I2C.Port.kMXP, new DigitalInput(1));
+//	public static final ImuDigitalComboBoard imuDigitalComboBoard1 = new ImuDigitalComboBoard(I2C.Port.kMXP, new DigitalInput(1));
 	public static final OnBoardAccelerometer onBoardAccelerometer = new OnBoardAccelerometer();
 	public static OI oi;
 

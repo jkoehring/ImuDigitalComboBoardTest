@@ -6,6 +6,8 @@
  */
 package edu.wpi.first.wpilibj;
 
+import org.usfirst.frc.team1165.util.Rolling;
+
 import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.util.BoundaryException;
 
@@ -282,9 +284,9 @@ public class ITG3200 extends SensorBase
 	 * The following used to dynamically calculate the sample rate.
 	 */
 	private long dynamicSampleRateStartTime;
-	private long dynamicSampleRateSampleCount;
-	private double dynamicSampleRate;
-	private Object dynamicSampleRateLock = new Object();
+	private final int rollingWindowSize = 100;
+	private Rolling rolling;
+	private Object rollingLock = new Object();
 	/**
 	 * The following used to keep count of errors reading from and writing to device.
 	 */
@@ -351,10 +353,10 @@ public class ITG3200 extends SensorBase
 					}
 				}
 								
-				synchronized(dynamicSampleRateLock)
+				synchronized(rollingLock)
 				{
-					dynamicSampleRateSampleCount++;
-					dynamicSampleRate = dynamicSampleRateSampleCount * 1e9 / (System.nanoTime() - dynamicSampleRateStartTime);
+					rolling.add(System.nanoTime() - dynamicSampleRateStartTime);
+					dynamicSampleRateStartTime = System.nanoTime();
 				}
 
 				clearInterrupts();
@@ -602,17 +604,20 @@ public class ITG3200 extends SensorBase
 	
 	public void resetDynamicSampleRate()
 	{
-		synchronized(dynamicSampleRateLock)
+		synchronized(rollingLock)
 		{
 			dynamicSampleRateStartTime = System.nanoTime();
-			dynamicSampleRateSampleCount = 0;
-			dynamicSampleRate = 0;
+			rolling = new Rolling(rollingWindowSize);
 		}
 	}
 	
 	public double getDynamicSampleRate()
 	{
-		return dynamicSampleRate;
+		synchronized(rollingLock)
+		{
+			// rolling.getAverage() will return average ns / sample
+			return 1e9 / rolling.getAverage();
+		}
 	}
 	
 	public int getReadErrorCount()
