@@ -33,7 +33,7 @@ public class ITG3200 extends SensorBase
 	 */
 	public static final double TEMPERATURE_SENSITIVITY = 280;
 	/**
-	 * The ofset of the value retrieved from the temperature sensor.
+	 * The offset of the value retrieved from the temperature sensor.
 	 */
 	public static final int TEMPERATURE_OFFSET = -13200;
 
@@ -292,6 +292,8 @@ public class ITG3200 extends SensorBase
 	 */
 	private int readErrorCount;
 	private int writeErrorCount;
+	
+	private Object interruptLock = new Object();
 
 	/**
 	 * Creates a new ITG-3200 on the specified I2C port and digital interrupt
@@ -339,27 +341,32 @@ public class ITG3200 extends SensorBase
 			@Override
 			public void interruptFired(int interruptAssertedMask, Object param)
 			{
-				if (readTemperature())  { }
+				synchronized(interruptLock)
 				{
-					if (calibrate)
+					if (readTemperature())  { }
 					{
-						// If in calibration mode, run the calibration handler
-						readCalibrationData();
+						/*
+						if (calibrate)
+						{
+							// If in calibration mode, run the calibration handler
+							readCalibrationData();
+						}
+						else
+						{
+							// Otherwise, read the axes normally
+							readProductionData();
+						}
+						*/
 					}
-					else
+									
+					synchronized(rollingLock)
 					{
-						// Otherwise, read the axes normally
-						readProductionData();
+						rolling.add(System.nanoTime() - dynamicSampleRateStartTime);
+						dynamicSampleRateStartTime = System.nanoTime();
 					}
+	
+					clearInterrupts();
 				}
-								
-				synchronized(rollingLock)
-				{
-					rolling.add(System.nanoTime() - dynamicSampleRateStartTime);
-					dynamicSampleRateStartTime = System.nanoTime();
-				}
-
-				clearInterrupts();
 			}
 		});
 		// Listen for a falling edge
@@ -495,7 +502,6 @@ public class ITG3200 extends SensorBase
 	 */
 	private void clearInterrupts()
 	{
-		// The gyro is configured to clear interrupts on any register read.
 		byte[] buf = new byte[1];
 		i2cRead(INTERRUPT_STATUS_REGISTER, 1, buf);
 	}
