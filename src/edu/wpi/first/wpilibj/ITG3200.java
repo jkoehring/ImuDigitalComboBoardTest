@@ -241,6 +241,7 @@ public class ITG3200 extends SensorBase
 	 * The filter the gyro should use.
 	 */
 	private Filter filter = Filter.DLPF_256Hz;
+	//private Filter filter = Filter.DLPF_188Hz;
 	/**
 	 * The internal sample rate of the gyro in hertz.
 	 */
@@ -254,6 +255,7 @@ public class ITG3200 extends SensorBase
 	 * value to get the real sample rate.
 	 */
 	private int sampleRateDivider = 250;
+	//private int sampleRateDivider = 50;
 	/**
 	 * The clock source for the gyro.
 	 */
@@ -279,6 +281,7 @@ public class ITG3200 extends SensorBase
 	/**
 	 * The die temperature of the device.
 	 */
+	private short rawTemperature;
 	private double temperature;
 	/**
 	 * The following used to dynamically calculate the sample rate.
@@ -370,7 +373,7 @@ public class ITG3200 extends SensorBase
 			}
 		});
 		// Listen for a falling edge
-		interrupt.setUpSourceEdge(false, true);
+		interrupt.setUpSourceEdge(true, false);
 
 		// Write the power management register (ie. clock source)
 		writePowerManagement();
@@ -391,187 +394,6 @@ public class ITG3200 extends SensorBase
 
 		// Calibrate the gyro
 		calibrate(DEFAULT_CALIBRATION_TIME);
-	}
-
-	/**
-	 * Read the axes and add the values to the calibration sum.
-	 */
-	private void readCalibrationData()
-	{
-		byte[] data = readAxisData();
-
-		numCalibrationSamples++;
-		xGyro.calibrationSum += (data[0] << 8) | data[1];
-		yGyro.calibrationSum += (data[2] << 8) | data[3];
-		zGyro.calibrationSum += (data[4] << 8) | data[5];
-	}
-
-	/**
-	 * Read the axes and compute the rate and angle.
-	 */
-	private void readProductionData()
-	{
-		byte[] data = readAxisData();
-
-		synchronized (this)
-		{
-			xGyro.rate = (((data[0] << 8) | data[1]) - xGyro.center) / GYRO_SENSITIVITY;
-			yGyro.rate = (((data[2] << 8) | data[3]) - yGyro.center) / GYRO_SENSITIVITY;
-			zGyro.rate = (((data[4] << 8) | data[5]) - zGyro.center) / GYRO_SENSITIVITY;
-
-			xGyro.angle += xGyro.rate / sampleRate;
-			yGyro.angle += yGyro.rate / sampleRate;
-			zGyro.angle += zGyro.rate / sampleRate;
-		}
-	}
-
-	/**
-	 * Reads all axis data from the gyro.
-	 * 
-	 * @return An array containing 6 bytes of data.
-	 */
-	private byte[] readAxisData()
-	{
-		byte[] data = new byte[6];
-		i2cRead(GYRO_REGISTER, data.length, data);
-		return data;
-	}
-	
-	/**
-	 * Reads all temperature data from the gyro.
-	 * 
-	 * @return An array containing 2 bytes of data.
-	 */
-	private byte[] readTempData()
-	{
-		byte[] data = new byte[2];
-		i2cRead(TEMPERATURE_REGISTER, data.length, data);
-		return data;
-	}
-
-	private boolean readTemperature()
-	{
-		byte[] data = readTempData();
-
-		double temp = (((data[0] << 8) | data[1]) - TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY;
-//		if (temp > 0)
-		{
-			temperature = temp;
-			return true;
-		}
-		
-//		return false;
-	}
-
-	public double getSampleRate()
-	{
-		return sampleRate;
-	}
-
-	/**
-	 * Get the temperature of the gyro in degrees celcius.
-	 * 
-	 * @return the temperature
-	 */
-	public double getTemperature()
-	{
-		return temperature;
-	}
-
-	/**
-	 * Write the interrupt configuration flags.
-	 */
-	private void writeInterruptConfig()
-	{
-		// 7: Logic level for INT output pin - 1=active low, 0=active high
-		// 6: Drive type for INT output pin - 1=open drain, 0=push-pull
-		// 5: Latch mode - 1=latch until interrupt is cleared, 0=50us pulse
-		// 4: Latch clear method - 1=any register read, 0=status register read
-		// only
-		// 3: 0
-		// 2: Enable interrupt when device is ready (PLL ready after changing
-		// clock source)
-		// 1: 0
-		// 0: Enable interrupt when data is available
-
-		i2cWrite(INTERRUPT_CONFIG_REGISTER, 0b11100001);
-	}
-
-	/**
-	 * Clear the interrupt status register.
-	 */
-	private void clearInterrupts()
-	{
-		byte[] buf = new byte[1];
-		i2cRead(INTERRUPT_STATUS_REGISTER, 1, buf);
-	}
-
-	/**
-	 * Sets the filter type to use. This also may change the sample rate.
-	 * 
-	 * @see Filter
-	 * @param filter
-	 *            the filter type
-	 */
-	public void setFilter(Filter filter)
-	{
-		this.filter = filter;
-		writeDLPFFullScale();
-		writeSampleRateDivider();
-	}
-
-	/**
-	 * Write the digital filter register and the full scale flag.
-	 */
-	private void writeDLPFFullScale()
-	{
-		switch (filter)
-		{
-		case DLPF_256Hz:
-			internalSampleRate = 8000;
-			break;
-		default:
-			internalSampleRate = 1000;
-			break;
-		}
-
-		int data = (3 << 3) | filter.value;
-		i2cWrite(DLPF_FULL_SCALE_REGISTER, data);
-	}
-
-	/**
-	 * set the sample rate divider. This divides the internal sample rate by the
-	 * specified value.
-	 * 
-	 * @param divider
-	 *            the sample rate divider
-	 */
-	public void setSampleRateDivider(int divider)
-	{
-		BoundaryException.assertWithinBounds(divider, 1, 256);
-		sampleRateDivider = divider;
-		writeSampleRateDivider();
-	}
-
-	/**
-	 * Write the sample rate divider register.
-	 */
-	private void writeSampleRateDivider()
-	{
-		sampleRate = ((double) internalSampleRate) / sampleRateDivider;
-		i2cWrite(SAMPLE_RATE_REGISTER, sampleRateDivider - 1);
-	}
-
-	/**
-	 * Set the clock source to use for the gyro.
-	 * 
-	 * @param source
-	 *            the clock source
-	 */
-	public void setClockSource(ClockSource source)
-	{
-		clockSource = source;
-		writePowerManagement();
 	}
 
 	/**
@@ -608,13 +430,13 @@ public class ITG3200 extends SensorBase
 		}
 	}
 	
-	public void resetDynamicSampleRate()
+	/**
+	 * Clear the interrupt status register.
+	 */
+	private void clearInterrupts()
 	{
-		synchronized(rollingLock)
-		{
-			dynamicSampleRateStartTime = System.nanoTime();
-			rolling = new Rolling(rollingWindowSize);
-		}
+		byte[] buf = new byte[1];
+		i2cRead(INTERRUPT_STATUS_REGISTER, 1, buf);
 	}
 	
 	public double getDynamicSampleRate()
@@ -626,45 +448,34 @@ public class ITG3200 extends SensorBase
 		}
 	}
 	
+	public short getRawTemperature()
+	{
+		return rawTemperature;
+	}
+	
 	public int getReadErrorCount()
 	{
 		return readErrorCount;
+	}
+
+	public double getSampleRate()
+	{
+		return sampleRate;
+	}
+
+	/**
+	 * Get the temperature of the gyro in degrees celcius.
+	 * 
+	 * @return the temperature
+	 */
+	public double getTemperature()
+	{
+		return temperature;
 	}
 	
 	public int getWriteErrorCount()
 	{
 		return writeErrorCount;
-	}
-	
-	private boolean i2cRead(int register, int dataLength, byte[] data)
-	{
-		if (!i2c.read(register,  dataLength, data))
-		{
-			readErrorCount++;
-			return false;
-		}
-		
-		return true;
-	}
-	
-	private boolean i2cWrite(int register, int value)
-	{
-		if (!i2c.write(register, value))
-		{
-			writeErrorCount++;
-			return false;
-		}
-		
-		return true;
-	}
-
-	/**
-	 * Write the power management (clock source) register.
-	 */
-	private void writePowerManagement()
-	{
-		int data = clockSource.value;
-		i2cWrite(POWER_MANAGEMENT_REGISTER, data);
 	}
 
 	/**
@@ -695,5 +506,204 @@ public class ITG3200 extends SensorBase
 	public GyroAxis getZGyro()
 	{
 		return zGyro;
+	}
+	
+	private boolean i2cRead(int register, int dataLength, byte[] data)
+	{
+		if (!i2c.read(register,  dataLength, data))
+		{
+			readErrorCount++;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private boolean i2cWrite(int register, int value)
+	{
+		if (!i2c.write(register, value))
+		{
+			writeErrorCount++;
+			return false;
+		}
+		
+		return true;
+	}
+
+	/**
+	 * Reads all axis data from the gyro.
+	 * 
+	 * @return An array containing 6 bytes of data.
+	 */
+	private byte[] readAxisData()
+	{
+		byte[] data = new byte[6];
+		i2cRead(GYRO_REGISTER, data.length, data);
+		return data;
+	}
+
+	/**
+	 * Read the axes and add the values to the calibration sum.
+	 */
+	private void readCalibrationData()
+	{
+		byte[] data = readAxisData();
+
+		numCalibrationSamples++;
+		xGyro.calibrationSum += (data[0] << 8) | data[1];
+		yGyro.calibrationSum += (data[2] << 8) | data[3];
+		zGyro.calibrationSum += (data[4] << 8) | data[5];
+	}
+
+	/**
+	 * Read the axes and compute the rate and angle.
+	 */
+	private void readProductionData()
+	{
+		byte[] data = readAxisData();
+
+		synchronized (this)
+		{
+			xGyro.rate = (((data[0] << 8) | data[1]) - xGyro.center) / GYRO_SENSITIVITY;
+			yGyro.rate = (((data[2] << 8) | data[3]) - yGyro.center) / GYRO_SENSITIVITY;
+			zGyro.rate = (((data[4] << 8) | data[5]) - zGyro.center) / GYRO_SENSITIVITY;
+
+			xGyro.angle += xGyro.rate / sampleRate;
+			yGyro.angle += yGyro.rate / sampleRate;
+			zGyro.angle += zGyro.rate / sampleRate;
+		}
+	}
+	
+	/**
+	 * Reads all temperature data from the gyro.
+	 * 
+	 * @return An array containing 2 bytes of data.
+	 */
+	private byte[] readTempData()
+	{
+		byte[] data = new byte[2];
+		i2cRead(TEMPERATURE_REGISTER, data.length, data);
+		return data;
+	}
+
+	private boolean readTemperature()
+	{
+		byte[] data = readTempData();
+
+		short rawTemp = (short) ((data[0] << 8) | data[1]);
+		double temp = (rawTemp - TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY;
+//		if (temp > 0)
+		{
+			rawTemperature = rawTemp;
+			temperature = temp;
+			return true;
+		}
+		
+//		return false;
+	}
+	
+	public void resetDynamicSampleRate()
+	{
+		synchronized(rollingLock)
+		{
+			dynamicSampleRateStartTime = System.nanoTime();
+			rolling = new Rolling(rollingWindowSize);
+		}
+	}
+
+	/**
+	 * Set the clock source to use for the gyro.
+	 * 
+	 * @param source
+	 *            the clock source
+	 */
+	public void setClockSource(ClockSource source)
+	{
+		clockSource = source;
+		writePowerManagement();
+	}
+
+	/**
+	 * Sets the filter type to use. This also may change the sample rate.
+	 * 
+	 * @see Filter
+	 * @param filter
+	 *            the filter type
+	 */
+	public void setFilter(Filter filter)
+	{
+		this.filter = filter;
+		writeDLPFFullScale();
+		writeSampleRateDivider();
+	}
+
+	/**
+	 * set the sample rate divider. This divides the internal sample rate by the
+	 * specified value.
+	 * 
+	 * @param divider
+	 *            the sample rate divider
+	 */
+	public void setSampleRateDivider(int divider)
+	{
+		BoundaryException.assertWithinBounds(divider, 1, 256);
+		sampleRateDivider = divider;
+		writeSampleRateDivider();
+	}
+
+	/**
+	 * Write the digital filter register and the full scale flag.
+	 */
+	private void writeDLPFFullScale()
+	{
+		switch (filter)
+		{
+		case DLPF_256Hz:
+			internalSampleRate = 8000;
+			break;
+		default:
+			internalSampleRate = 1000;
+			break;
+		}
+
+		int data = (3 << 3) | filter.value;
+		i2cWrite(DLPF_FULL_SCALE_REGISTER, data);
+	}
+
+	/**
+	 * Write the interrupt configuration flags.
+	 */
+	private void writeInterruptConfig()
+	{
+		// 7: Logic level for INT output pin - 1=active low, 0=active high
+		// 6: Drive type for INT output pin - 1=open drain, 0=push-pull
+		// 5: Latch mode - 1=latch until interrupt is cleared, 0=50us pulse
+		// 4: Latch clear method - 1=any register read, 0=status register read
+		// only
+		// 3: 0
+		// 2: Enable interrupt when device is ready (PLL ready after changing
+		// clock source)
+		// 1: 0
+		// 0: Enable interrupt when data is available
+
+		i2cWrite(INTERRUPT_CONFIG_REGISTER, 0b01100001);
+	}
+
+	/**
+	 * Write the power management (clock source) register.
+	 */
+	private void writePowerManagement()
+	{
+		int data = clockSource.value;
+		i2cWrite(POWER_MANAGEMENT_REGISTER, data);
+	}
+
+	/**
+	 * Write the sample rate divider register.
+	 */
+	private void writeSampleRateDivider()
+	{
+		sampleRate = ((double) internalSampleRate) / sampleRateDivider;
+		i2cWrite(SAMPLE_RATE_REGISTER, sampleRateDivider - 1);
 	}
 }
