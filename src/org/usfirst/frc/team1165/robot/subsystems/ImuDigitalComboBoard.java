@@ -37,7 +37,7 @@ public class ImuDigitalComboBoard extends ReportableSubsystem
 	{
 		this.port = port;
 		
-//		accelerometer = new ADXL345_I2C(port, Accelerometer.Range.k16G, true);
+		accelerometer = new ADXL345_I2C(port, Accelerometer.Range.k16G, true);
 		gyro = new ITG3200(port, interrupt, false);
 		
 		xGyro = gyro.getXGyro();
@@ -83,8 +83,8 @@ public class ImuDigitalComboBoard extends ReportableSubsystem
 			tempMin = Math.min(temp, tempMin);
 			tempMax = Math.max(temp, tempMax);
 			
-			SmartDashboard.putString("IMU " + port.getValue() + " Raw Temp Min", String.format("%4X", rawTempMin));
-			SmartDashboard.putString("IMU " + port.getValue() + " Raw Temp Max", String.format("%4X", rawTempMax));
+			SmartDashboard.putString("IMU " + port.getValue() + " Raw Temp Min", String.format("%04X", rawTempMin));
+			SmartDashboard.putString("IMU " + port.getValue() + " Raw Temp Max", String.format("%04X", rawTempMax));
 			
 			SmartDashboard.putNumber("IMU " + port.getValue() + " Temp", temp);
 			SmartDashboard.putNumber("IMU " + port.getValue() + " Temp Min", tempMin);

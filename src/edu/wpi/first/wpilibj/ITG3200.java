@@ -36,6 +36,10 @@ public class ITG3200 extends SensorBase
 	 * The offset of the value retrieved from the temperature sensor.
 	 */
 	public static final int TEMPERATURE_OFFSET = -13200;
+	/**
+	 * The temperature for which the TEMPERATURE_OFFSET applies.
+	 */
+	public static final double TEMPERATURE_BASE = 35.0;
 
 	/**
 	 * The default address for the gyro. This is what the SparkFun breakout
@@ -346,20 +350,17 @@ public class ITG3200 extends SensorBase
 			{
 				synchronized(interruptLock)
 				{
-					if (readTemperature())  { }
+					readTemperature();
+
+					if (calibrate)
 					{
-						/*
-						if (calibrate)
-						{
-							// If in calibration mode, run the calibration handler
-							readCalibrationData();
-						}
-						else
-						{
-							// Otherwise, read the axes normally
-							readProductionData();
-						}
-						*/
+						// If in calibration mode, run the calibration handler
+						readCalibrationData();
+					}
+					else
+					{
+						// Otherwise, read the axes normally
+						readProductionData();
 					}
 									
 					synchronized(rollingLock)
@@ -373,7 +374,7 @@ public class ITG3200 extends SensorBase
 			}
 		});
 		// Listen for a falling edge
-		interrupt.setUpSourceEdge(true, false);
+		interrupt.setUpSourceEdge(false, true);
 
 		// Write the power management register (ie. clock source)
 		writePowerManagement();
@@ -550,9 +551,9 @@ public class ITG3200 extends SensorBase
 		byte[] data = readAxisData();
 
 		numCalibrationSamples++;
-		xGyro.calibrationSum += (data[0] << 8) | data[1];
-		yGyro.calibrationSum += (data[2] << 8) | data[3];
-		zGyro.calibrationSum += (data[4] << 8) | data[5];
+		xGyro.calibrationSum += (data[0] << 8) | (data[1] & 0xff);
+		yGyro.calibrationSum += (data[2] << 8) | (data[3] & 0xff);
+		zGyro.calibrationSum += (data[4] << 8) | (data[5] & 0xff);
 	}
 
 	/**
@@ -564,9 +565,9 @@ public class ITG3200 extends SensorBase
 
 		synchronized (this)
 		{
-			xGyro.rate = (((data[0] << 8) | data[1]) - xGyro.center) / GYRO_SENSITIVITY;
-			yGyro.rate = (((data[2] << 8) | data[3]) - yGyro.center) / GYRO_SENSITIVITY;
-			zGyro.rate = (((data[4] << 8) | data[5]) - zGyro.center) / GYRO_SENSITIVITY;
+			xGyro.rate = (((data[0] << 8) | (data[1] & 0xff)) - xGyro.center) / GYRO_SENSITIVITY;
+			yGyro.rate = (((data[2] << 8) | (data[3] & 0xff)) - yGyro.center) / GYRO_SENSITIVITY;
+			zGyro.rate = (((data[4] << 8) | (data[5] & 0xff)) - zGyro.center) / GYRO_SENSITIVITY;
 
 			xGyro.angle += xGyro.rate / sampleRate;
 			yGyro.angle += yGyro.rate / sampleRate;
@@ -586,20 +587,14 @@ public class ITG3200 extends SensorBase
 		return data;
 	}
 
-	private boolean readTemperature()
+	private void readTemperature()
 	{
 		byte[] data = readTempData();
 
-		short rawTemp = (short) ((data[0] << 8) | data[1]);
-		double temp = (rawTemp - TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY;
-//		if (temp > 0)
-		{
-			rawTemperature = rawTemp;
-			temperature = temp;
-			return true;
-		}
-		
-//		return false;
+		short rawTemp = (short) ((data[0] << 8) | (data[1] & 0xff));
+		double temp = (rawTemp - TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY + TEMPERATURE_BASE;
+		rawTemperature = rawTemp;
+		temperature = temp;
 	}
 	
 	public void resetDynamicSampleRate()
@@ -686,7 +681,7 @@ public class ITG3200 extends SensorBase
 		// 1: 0
 		// 0: Enable interrupt when data is available
 
-		i2cWrite(INTERRUPT_CONFIG_REGISTER, 0b01100001);
+		i2cWrite(INTERRUPT_CONFIG_REGISTER, 0b11100001);
 	}
 
 	/**
