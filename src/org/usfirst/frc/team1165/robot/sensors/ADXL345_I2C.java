@@ -2,6 +2,7 @@
 package org.usfirst.frc.team1165.robot.sensors;
 
 import edu.wpi.first.wpilibj.I2C;
+import edu.wpi.first.wpilibj.FixedI2C;
 import edu.wpi.first.wpilibj.SensorBase;
 import edu.wpi.first.wpilibj.communication.FRCNetworkCommunicationsLibrary.tInstances;
 import edu.wpi.first.wpilibj.communication.FRCNetworkCommunicationsLibrary.tResourceType;
@@ -47,7 +48,7 @@ public class ADXL345_I2C extends SensorBase implements Accelerometer, LiveWindow
 		public double YAxis;
 		public double ZAxis;
 	}
-	private I2C m_i2c;
+	private FixedI2C m_i2c;
 	
 	/**
 	 * Constructor.
@@ -66,7 +67,7 @@ public class ADXL345_I2C extends SensorBase implements Accelerometer, LiveWindow
 	 * @param useAltAddress Use the alternate I2C address for the device
 	 */
 	public ADXL345_I2C(I2C.Port port, Range range, boolean useAltAddress) {
-		m_i2c = new I2C(port, useAltAddress ? kAltAddress : kAddress);
+		m_i2c = new FixedI2C(port, useAltAddress ? kAltAddress : kAddress);
 
 		// Turn on the measurements
 		m_i2c.write(kPowerCtlRegister, kPowerCtl_Measure);

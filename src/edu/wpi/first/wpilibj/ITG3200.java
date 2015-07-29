@@ -235,7 +235,7 @@ public class ITG3200 extends SensorBase
 	/**
 	 * The I2C object used to communicate.
 	 */
-	private final I2C i2c;
+	private final FixedI2C i2c;
 
 	/**
 	 * The I2C address of the gyro.
@@ -339,7 +339,7 @@ public class ITG3200 extends SensorBase
 			address = ADDRESS;
 		}
 
-		i2c = new I2C(port, address);
+		i2c = new FixedI2C(port, address);
 
 		// Register an interrupt handler
 		interrupt.requestInterrupts(new InterruptHandlerFunction<Object>()
@@ -511,7 +511,7 @@ public class ITG3200 extends SensorBase
 	
 	private boolean i2cRead(int register, int dataLength, byte[] data)
 	{
-		if (!i2c.read(register,  dataLength, data))
+		if (i2c.read(register,  dataLength, data))
 		{
 			readErrorCount++;
 			return false;
@@ -522,7 +522,7 @@ public class ITG3200 extends SensorBase
 	
 	private boolean i2cWrite(int register, int value)
 	{
-		if (!i2c.write(register, value))
+		if (i2c.write(register, value))
 		{
 			writeErrorCount++;
 			return false;

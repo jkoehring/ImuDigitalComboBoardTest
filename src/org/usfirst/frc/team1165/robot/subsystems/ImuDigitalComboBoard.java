@@ -1,8 +1,9 @@
 package org.usfirst.frc.team1165.robot.subsystems;
 
 import org.usfirst.frc.team1165.robot.commands.Reporter;
-import org.usfirst.frc.team1165.robot.commands.ResetImuDigitalComboBoard;
+import org.usfirst.frc.team1165.robot.commands.Resetter;
 import org.usfirst.frc.team1165.robot.sensors.ADXL345_I2C;
+import org.usfirst.frc.team1165.util.Resettable;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.I2C;
@@ -14,13 +15,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 /**
  *
  */
-public class ImuDigitalComboBoard extends ReportableSubsystem
+public class ImuDigitalComboBoard extends ReportableSubsystem implements Resettable
 {
 	private ADXL345_I2C accelerometer;
 	private ITG3200 gyro;
-	
-	private final double DEGREES_PER_RADIAN = 180.0 / Math.PI;
-	
+		
 	private double tempMin;
 	private double tempMax;
 	
@@ -53,7 +52,7 @@ public class ImuDigitalComboBoard extends ReportableSubsystem
 	public void initDefaultCommand()
 	{
 		setDefaultCommand(new Reporter(this));
-		SmartDashboard.putData("Reset IMU " + port.getValue(), new ResetImuDigitalComboBoard(this));
+		SmartDashboard.putData("Reset IMU " + port.getValue(), new Resetter(this));
 	}
 	
 	public void report()
